@@ -1,0 +1,19 @@
+{
+  "name": "router",
+  "version": "1.0.0",
+  "description": "simple Electra's router",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "balena.io",
+    "rabbitmq",
+    "nodejs"
+  ],
+  "dependencies": {
+    "amqp-connection-manager": "^2.3.0",
+    "amqplib": "^0.5.3"
+  }
+}
