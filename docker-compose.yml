@@ -20,7 +20,6 @@ services:
       io.balena.features.supervisor-api: '1'    
   Rabbitmq:
     image: bitnami/rabbitmq:latest
-    container_name: rabbitmq
     ports:
         - "5672:5672"
         - "15672:15672"
