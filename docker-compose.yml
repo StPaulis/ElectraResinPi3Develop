@@ -18,7 +18,7 @@ services:
       - RabbitMQ
     labels:
       io.balena.features.supervisor-api: '1'    
-  Rabbitmq:
+  RabbitMQ:
     image: bitnami/rabbitmq:latest
     ports:
         - "5672:5672"
