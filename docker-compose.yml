@@ -19,12 +19,8 @@ services:
     labels:
       io.balena.features.supervisor-api: '1'    
   RabbitMQ:
-    image: bitnami/rabbitmq:latest
-    ports:
-        - "5672:5672"
-        - "15672:15672"
-    environment:
-        RABBITMQ_USERNAME: "guest"
-        RABBITMQ_PASSWORD: "guest"
+    build: ./RabbitMQ
+    network_mode: "host"
+    privileged: true
     labels:
       io.balena.features.supervisor-api: '1'
