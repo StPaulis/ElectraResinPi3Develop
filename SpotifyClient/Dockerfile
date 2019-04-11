@@ -14,7 +14,7 @@ RUN curl -sSL https://dtcooper.github.io/raspotify/key.asc | sudo apt-key add -v
 RUN echo 'deb https://dtcooper.github.io/raspotify jessie main' | sudo tee /etc/apt/sources.list.d/raspotify.list
 
 # Install package
-RUN sudo apt-get update
+RUN sudo apt-get update && apt-get install -y apt-transport-https
 RUN sudo apt-get -y install raspotify 
  
 # Defines our working directory in container 

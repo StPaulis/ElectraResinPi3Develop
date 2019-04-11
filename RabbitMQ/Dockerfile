@@ -9,7 +9,7 @@ RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 434975BD900CC
 
 RUN echo 'deb http://packages.erlang-solutions.com/debian wheezy contrib' > /etc/apt/sources.list.d/erlang.list
 
-RUN apt-get update -y &&\
+RUN apt-get update && apt-get install -y apt-transport-https -y &&\
     apt-get install -y  --no-install-recommends \
     logrotate curl ca-certificates \
     erlang erlang-mnesia erlang-public-key erlang-crypto erlang-ssl erlang-asn1 \
