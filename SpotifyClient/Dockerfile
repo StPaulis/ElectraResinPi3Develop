@@ -1,6 +1,6 @@
 FROM resin/raspberrypi3-debian
 
-RUN sudo apt-get update
+RUN sudo apt-get update && apt-get install -y apt-transport-https
 # Install curl and https apt transport
 RUN sudo apt-get -y install curl apt-transport-https
 RUN sudo apt-get install -y build-essential
