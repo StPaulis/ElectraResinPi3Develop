@@ -17,7 +17,12 @@ services:
     depends_on:
       - RabbitMQ
     labels:
-      io.balena.features.supervisor-api: '1'    
+      io.balena.features.supervisor-api: '1'
+  SpotifyClient:
+    build: ./SpotifyClient
+    privileged: true
+    labels:
+      io.balena.features.supervisor-api: '1'        
   RabbitMQ:
     build: ./RabbitMQ
     network_mode: "host"
