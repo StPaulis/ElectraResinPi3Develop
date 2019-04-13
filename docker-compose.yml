@@ -18,14 +18,10 @@ services:
       io.balena.features.supervisor-api: '1'         
   RabbitMQ:
     image: "arm32v7/rabbitmq:3.6-management"
-    environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest"
-      RABBITMQ_DEFAULT_VHOST: "/"
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    volumes:
-      - "./enabled_plugins:/etc/rabbitmq/enabled_plugins"
+    network_mode: "host"
+    privileged: true
+    expose: 
+      - "5672"
+      - "15672"
     labels:
       io.balena.features.supervisor-api: '1'
