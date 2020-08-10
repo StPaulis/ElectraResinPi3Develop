@@ -96,7 +96,7 @@ function handleWrite(model) {
 
   if (model.ClosedInMilliseconds) {
     setTimeout(() => {
-      blink(false, model.Id);
+      handleWrite({...model, status: false, ClosedInMilliseconds: 0});
     }, model.ClosedInMilliseconds);
   }
 }
