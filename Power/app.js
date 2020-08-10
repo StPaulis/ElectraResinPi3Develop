@@ -82,7 +82,7 @@ function initPower() {
   }
 }
 
-function initGpioWriter(model) {
+function handleWrite(model) {
   if (model.PinModeId === 4) {
     blink(!boilerStatus, model.Id);
 
@@ -92,6 +92,12 @@ function initGpioWriter(model) {
 
   } else {
     blink(model.Status, model.Id);
+  }
+
+  if (model.ClosedInMilliseconds) {
+    setTimeout(() => {
+      blink(false, model.Id);
+    }, model.ClosedInMilliseconds);
   }
 }
 
@@ -154,7 +160,7 @@ function receiveFromRmqToWrite(msg) {
   var model = JSON.parse(msg);
 
   try {
-    initGpioWriter(model);
+    handleWrite(model);
   } catch (error) {
     console.log(error);
     exit();
