@@ -94,13 +94,13 @@ function handleWrite(model) {
     blink(model.Status, model.Id);
   }
 
-  if (model.ClosedInMilliseconds) {
+  if (model.ClosedinMilliseconds) {
     setTimeout(() => {
       model.Status = !model.Status;
-      model.ClosedInMilliseconds = 0;
-      console.log(`[PowerWrite]: Auto Trigger Pin ${model.Id} to ${model.Status} in ${model.ClosedInMilliseconds} milliseconds`)
+      model.ClosedinMilliseconds = 0;
+      console.log(`[PowerWrite]: Auto Trigger Pin ${model.Id} to ${model.Status} in ${model.ClosedinMilliseconds} milliseconds`)
       handleWrite(model);
-    }, model.ClosedInMilliseconds);
+    }, model.ClosedinMilliseconds);
   }
 }
 
