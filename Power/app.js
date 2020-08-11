@@ -95,10 +95,11 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    setTimeout(() => {
+    console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`)
+    setTimeout(function()  {
       model.Status = !model.Status;
       model.ClosedinMilliseconds = 0;
-      console.log(`[PowerWrite]: Auto Trigger Pin ${model.Id} to ${model.Status} in ${model.ClosedinMilliseconds} milliseconds`)
+      console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} `)
       handleWrite(model);
     }, model.ClosedinMilliseconds);
   }
