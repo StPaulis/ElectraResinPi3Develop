@@ -99,8 +99,8 @@ function handleWrite(model) {
     setTimeout(function()  {
       model.Status = !model.Status;
       model.ClosedinMilliseconds = 0;
-      console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} `)
-      handleWrite(model);
+      console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} `);
+      receiveFromRmqToWrite(JSON.stringify(model));
     }, model.ClosedinMilliseconds);
   }
 }
