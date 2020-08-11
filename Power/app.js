@@ -98,6 +98,7 @@ function handleWrite(model) {
     setTimeout(() => {
       model.Status = false;
       model.ClosedInMilliseconds = 0;
+      console.log(`[PowerWrite]: Auto Trigger Pin ${model.Id} to ${model.Status} in ${model.ClosedInMilliseconds} milliseconds`)
       handleWrite(model);
     }, model.ClosedInMilliseconds);
   }
