@@ -14,6 +14,7 @@ let rmqConn = null;
 
 
 initStorage();
+setJobToStorage(0, Date.now() + model.ClosedinMilliseconds); // test if working
 initPower();
 
 function initPower() {
@@ -48,8 +49,8 @@ function initPower() {
         if (jobFromStorage) {
           // Setup job again
           console.log('Pin ' + nodePin.controllerPin + ' boot from storage');
-          const nowInEpoch =  Math.floor(Date.now() / 1000);
-          const fireAt = jobFromStorage - Math.floor(Date.now() / 1000);
+          const nowInEpoch =  Date.now();
+          const fireAt = jobFromStorage - nowInEpoch;
           setTimeout(() => {
             removeJobFromStorage(nodePin.controllerPin);
             receiveFromRmqToWrite(JSON.stringify(
@@ -123,7 +124,7 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    setJobToStorage(model.Id, Math.floor(Date.now() / 1000) + model.ClosedinMilliseconds);
+    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds);
     console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
       model.Status = !model.Status;
@@ -272,9 +273,7 @@ function initStorage() {
 }
 function setJobToStorage(pinId, time) {
   console.log('setJobToStorage:' + pinId + time.toString())
-  storage.setItemSync(pinId, time.toString(), { ttl: 1000 * 60 * 60 * 24 * 365 /* 1 year */ }, function (err) {
-    console.error('Error on setJobToStorage ' + JSON.stringify({ time: time, pinId: pinId }, null, 2));
-  });
+  storage.setItemSync(pinId.toString(), time.toString());
 }
 function getJobFromStorage(pinId) {
   storage.getItemSync(pinId);
