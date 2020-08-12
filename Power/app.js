@@ -250,7 +250,7 @@ function bin2string(array) {
 
 function initStorage() {
   storage.initSync({
-    dir: 'data',
+    dir: '/usr/src/app/data',
 
     stringify: JSON.stringify,
 
