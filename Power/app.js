@@ -44,10 +44,11 @@ function initPower() {
         if (nodePin.pinModeId === 4) {
           boilerStatus = nodePin.status;
         }
+        blink(nodePin.status, nodePin.controllerPin);
 
+        // Setup job again if exists
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
-          // Setup job again
           console.log('Pin ' + nodePin.controllerPin + ' boot from storage');
           const nowInEpoch =  Date.now();
           const fireAt = jobFromStorage - nowInEpoch;
@@ -64,10 +65,7 @@ function initPower() {
                 JobGuid: '00000000-0000-0000-0000-000000000000', 
                 NodeId: nodeId.toString()
               }));
-          }, fireAt);
-        } else {
-          console.log('Pin ' + nodePin.controllerPin + ' boot from cloud');
-          blink(nodePin.status, nodePin.controllerPin);
+          }, fireAt > 100 ? fireAt : 100);
         }
       });
 
@@ -276,10 +274,10 @@ function setJobToStorage(pinId, time) {
   storage.setItemSync(pinId.toString(), time.toString());
 }
 function getJobFromStorage(pinId) {
-  storage.getItemSync(pinId);
+  storage.getItemSync(pinId.toString());
 }
 function removeJobFromStorage(pinId) {
-  storage.removeItemSync(pinId);
+  storage.removeItemSync(pinId.toString());
 }
 
 // #region Safely closing
