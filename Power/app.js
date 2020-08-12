@@ -12,6 +12,8 @@ var pinWriters = [];
 let boilerStatus = true;
 let rmqConn = null;
 
+
+initStorage();
 initPower();
 
 function initPower() {
@@ -101,7 +103,6 @@ function initPower() {
           initGpioReader(pinReaders.find(x => x.pin === nodePin).gpio);
         });
       })
-      .then(() => initStorage())
       .catch(function (error) {
         console.log('[Power Read] Restarting service on init' + error);
         initPowerRead();
