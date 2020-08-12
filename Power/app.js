@@ -249,17 +249,7 @@ function bin2string(array) {
 }
 
 function initStorage() {
-  storage.initSync({
-    dir: '/usr/src/app/data',
-    stringify: JSON.stringify,
-    parse: JSON.parse,
-    encoding: 'utf8',
-    logging: false,
-    ttl: false,
-    expiredInterval: 60 * 60 * 1000,
-    continuous: true,
-    forgiveParseErrors: false
-  });
+  storage.initSync();
 }
 function setJobToStorage(pinId, time) {
   console.log('setJobToStorage:' + pinId + time.toString());
