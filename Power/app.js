@@ -14,7 +14,7 @@ let rmqConn = null;
 
 
 initStorage();
-setJobToStorage(0, Date.now() + model.ClosedinMilliseconds); // test if working
+setJobToStorage(0, Date.now()); // test if working
 initPower();
 
 function initPower() {
