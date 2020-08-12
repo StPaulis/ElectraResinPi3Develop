@@ -249,7 +249,7 @@ function bin2string(array) {
 }
 
 function initStorage() {
-  storage.initSync({dir: 'data',});
+  storage.initSync({dir: '../../../data',});
 }
 function setJobToStorage(pinId, time) {
   console.log('setJobToStorage:' + pinId + time.toString());
