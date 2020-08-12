@@ -271,6 +271,7 @@ function initStorage() {
   });
 }
 function setJobToStorage(pinId, time) {
+  console.log('setJobToStorage:' + pin + time.toString())
   storage.setItemSync(pinId, time.toString(), { ttl: 1000 * 60 * 60 * 24 * 365 /* 1 year */ }, function (err) {
     console.error('Error on setJobToStorage ' + JSON.stringify({ time: time, pinId: pinId }, null, 2));
   });
