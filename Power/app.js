@@ -123,7 +123,7 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    setJobToStorage(model.Id, false, Math.floor(Date.now() / 1000) + model.ClosedinMilliseconds);
+    setJobToStorage(model.Id, Math.floor(Date.now() / 1000) + model.ClosedinMilliseconds);
     console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
       model.Status = !model.Status;
