@@ -1,4 +1,4 @@
-FROM resin/raspberrypi3-debian
+FROM resin/%%BALENA_MACHINE_NAME%%-debian
 
 ADD rabbitmq.deb rabbitmq.deb
 

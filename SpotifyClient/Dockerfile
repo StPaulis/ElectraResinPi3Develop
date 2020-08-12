@@ -1,4 +1,4 @@
-FROM resin/raspberrypi3-debian
+FROM resin/%%BALENA_MACHINE_NAME%%-debian
 
 RUN sudo apt-get update && apt-get install -y apt-transport-https
 # Install curl and https apt transport

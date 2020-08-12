@@ -14,7 +14,7 @@ let rmqConn = null;
 
 
 initStorage();
-setJobToStorage(0, Date.now()); // test if working
+getJobFromStorage(21); // test if working
 initPower();
 
 function initPower() {
@@ -50,7 +50,7 @@ function initPower() {
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
           console.log('Pin ' + nodePin.controllerPin + ' boot from storage');
-          const nowInEpoch =  Date.now();
+          const nowInEpoch = Date.now();
           const fireAt = jobFromStorage - nowInEpoch;
           setTimeout(() => {
             removeJobFromStorage(nodePin.controllerPin);
@@ -58,11 +58,11 @@ function initPower() {
               {
                 Id: nodePin.controllerPin,
                 Status: false,
-                ClosedinMilliseconds: 0, 
-                Service: 'Power_Write:' + nodeId.toString(), 
-                PinModeId: nodePin.pinModeId, 
-                Expiring: nowInEpoch + 15, 
-                JobGuid: '00000000-0000-0000-0000-000000000000', 
+                ClosedinMilliseconds: 0,
+                Service: 'Power_Write:' + nodeId.toString(),
+                PinModeId: nodePin.pinModeId,
+                Expiring: nowInEpoch + 15,
+                JobGuid: '00000000-0000-0000-0000-000000000000',
                 NodeId: nodeId.toString()
               }));
           }, fireAt > 100 ? fireAt : 100);
@@ -127,7 +127,7 @@ function handleWrite(model) {
     setTimeout(function () {
       model.Status = !model.Status;
       model.ClosedinMilliseconds = 0;
-      console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} `);
+      console.log(`[PowerWrite]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
       removeJobFromStorage(model.Id);
       receiveFromRmqToWrite(JSON.stringify(model));
     }, model.ClosedinMilliseconds);
@@ -250,27 +250,18 @@ function bin2string(array) {
 function initStorage() {
   storage.initSync({
     dir: '/usr/src/app/data',
-
     stringify: JSON.stringify,
-
     parse: JSON.parse,
-
     encoding: 'utf8',
-
-    logging: false,  // can also be custom logging function
-
-    ttl: false, // ttl* [NEW], can be true for 24h default or a number in MILLISECONDS or a valid Javascript Date object
-
-    expiredInterval: 60 * 60 * 1000, // every 1 hour the process will clean-up the expired cache
-
-    // in some cases, you (or some other service) might add non-valid storage files to your
-    // storage dir, i.e. Google Drive, make this true if you'd like to ignore these files and not throw an error
+    logging: false,  
+    ttl: false, 
+    expiredInterval: 60 * 60 * 1000, 
+    continuous: true,
     forgiveParseErrors: false
-
   });
 }
 function setJobToStorage(pinId, time) {
-  console.log('setJobToStorage:' + pinId + time.toString())
+  console.log('setJobToStorage:' + pinId + time.toString());
   storage.setItemSync(pinId.toString(), time.toString());
 }
 function getJobFromStorage(pinId) {
