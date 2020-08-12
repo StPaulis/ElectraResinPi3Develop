@@ -14,8 +14,8 @@ let rmqConn = null;
 
 
 initStorage();
-console.log(getJobFromStorage(21));
-setJobToStorage(21, 10);
+console.log(getJobFromStorage(0));
+setJobToStorage(0, 10);
 initPower();
 
 function initPower() {
