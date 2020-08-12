@@ -1,10 +1,11 @@
 const amqp = require('amqp-connection-manager');
 const axios = require('axios');
 var Gpio = require('onoff').Gpio;
+const storage = require('node-persist');
 
 const nodeId = process.env.NODE_ID || 7;
 const server_url = process.env.SERVER_URL || 'localhost:2853';
-const RMQ_IP = process.env.RMQ_IP || 'localhost'
+const RMQ_IP = process.env.RMQ_IP || 'localhost';
 const IS_PROD = process.env.IS_PROD || false;
 var pinReaders = [];
 var pinWriters = [];
@@ -40,8 +41,33 @@ function initPower() {
         if (nodePin.pinModeId === 4) {
           boilerStatus = nodePin.status;
         }
-        blink(nodePin.status, nodePin.controllerPin);
+
+        const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
+        if (jobFromStorage) {
+          // Setup job again
+          console.log('Pin ' + nodePin.controllerPin + ' boot from storage');
+          const nowInEpoch =  Math.floor(Date.now() / 1000);
+          const fireAt = jobFromStorage - Math.floor(Date.now() / 1000);
+          setTimeout(() => {
+            removeJobFromStorage(nodePin.controllerPin);
+            receiveFromRmqToWrite(JSON.stringify(
+              {
+                Id: nodePin.controllerPin,
+                Status: false,
+                ClosedinMilliseconds: 0, 
+                Service: 'Power_Write:' + nodeId.toString(), 
+                PinModeId: nodePin.pinModeId, 
+                Expiring: nowInEpoch + 15, 
+                JobGuid: '00000000-0000-0000-0000-000000000000', 
+                NodeId: nodeId.toString()
+              }));
+          }, fireAt);
+        } else {
+          console.log('Pin ' + nodePin.controllerPin + ' boot from cloud');
+          blink(nodePin.status, nodePin.controllerPin);
+        }
       });
+
       initPowerRead();
       subscribeWritersToRMQ();
     })
@@ -75,6 +101,7 @@ function initPower() {
           initGpioReader(pinReaders.find(x => x.pin === nodePin).gpio);
         });
       })
+      .then(() => initStorage())
       .catch(function (error) {
         console.log('[Power Read] Restarting service on init' + error);
         initPowerRead();
@@ -95,11 +122,13 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`)
-    setTimeout(function()  {
+    setJobToStorage(model.Id, false, Math.floor(Date.now() / 1000) + model.ClosedinMilliseconds);
+    console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
+    setTimeout(function () {
       model.Status = !model.Status;
       model.ClosedinMilliseconds = 0;
       console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} `);
+      removeJobFromStorage(model.Id);
       receiveFromRmqToWrite(JSON.stringify(model));
     }, model.ClosedinMilliseconds);
   }
@@ -109,7 +138,7 @@ function initGpioReader(gpio) {
   gpio.watch((err, value) => {
     if (err) {
       console.log(err);
-      exit()
+      exit();
     }
 
     console.log(`Pin ${gpio._gpio} changed, New value: ${value}`);
@@ -132,7 +161,7 @@ function getGpioReader(pin) {
         return 0;
       },
       readSync: (value) => {
-        console.log('Read Sync in virtual mode on pin:' + pin)
+        console.log('Read Sync in virtual mode on pin:' + pin);
       }
     };
     return virtualGpio;
@@ -141,7 +170,7 @@ function getGpioReader(pin) {
 
 function subscribeWritersToRMQ() {
   if (!rmqConn) {
-    rmqConn = amqp.connect([`amqp://${RMQ_IP}`])
+    rmqConn = amqp.connect([`amqp://${RMQ_IP}`]);
   };
 
   rmqConn.createChannel({
@@ -151,11 +180,11 @@ function subscribeWritersToRMQ() {
           durable: false
         }),
         channel.consume(`Power_Write:${nodeId}`, function (msg) {
-          receiveFromRmqToWrite(bin2string(msg.content))
+          receiveFromRmqToWrite(bin2string(msg.content));
         }, {
           noAck: true
         })
-      ])
+      ]);
     }
   });
 }
@@ -192,7 +221,7 @@ function sendToRmq(msg) {
     setup: function (channel) {
       return channel.assertQueue('Server', {
         durable: false
-      })
+      });
     }
   });
 
@@ -216,6 +245,40 @@ function bin2string(array) {
     result += (String.fromCharCode(array[i]));
   }
   return result;
+}
+
+function initStorage() {
+  storage.initSync({
+    dir: 'data',
+
+    stringify: JSON.stringify,
+
+    parse: JSON.parse,
+
+    encoding: 'utf8',
+
+    logging: false,  // can also be custom logging function
+
+    ttl: false, // ttl* [NEW], can be true for 24h default or a number in MILLISECONDS or a valid Javascript Date object
+
+    expiredInterval: 60 * 60 * 1000, // every 1 hour the process will clean-up the expired cache
+
+    // in some cases, you (or some other service) might add non-valid storage files to your
+    // storage dir, i.e. Google Drive, make this true if you'd like to ignore these files and not throw an error
+    forgiveParseErrors: false
+
+  });
+}
+function setJobToStorage(pinId, time) {
+  storage.setItemSync(pinId, time, { ttl: 1000 * 60 * 60 * 24 * 365 /* 1 year */ }, function (err) {
+    console.error('Error on setJobToStorage ' + JSON.stringify({ time: time, pinId: pinId }, null, 2));
+  });
+}
+function getJobFromStorage(pinId) {
+  storage.getItemSync(pinId);
+}
+function removeJobFromStorage(pinId) {
+  storage.removeItemSync(pinId);
 }
 
 // #region Safely closing

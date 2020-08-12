@@ -1,4 +1,6 @@
 version: '2.1'
+volumes:
+  electra-data:
 services:
   Router:
     build: ./Router
@@ -12,6 +14,8 @@ services:
     build: ./Power
     privileged: true
     network_mode: "host"
+    volumes:
+      - 'electra-data:/data'
     depends_on:
       - RabbitMQ
     labels:
