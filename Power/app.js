@@ -274,7 +274,7 @@ function setJobToStorage(pinId, time) {
   storage.setItemSync(pinId.toString(), time.toString());
 }
 function getJobFromStorage(pinId) {
-  storage.getItemSync(pinId.toString());
+  return storage.getItemSync(pinId.toString());
 }
 function removeJobFromStorage(pinId) {
   storage.removeItemSync(pinId.toString());
