@@ -14,7 +14,8 @@ let rmqConn = null;
 
 
 initStorage();
-getJobFromStorage(21); // test if working
+console.log(getJobFromStorage(21));
+setJobToStorage(21, 10);
 initPower();
 
 function initPower() {
@@ -49,7 +50,7 @@ function initPower() {
         // Setup job again if exists
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
-          console.log('Pin ' + nodePin.controllerPin + ' boot from storage');
+          console.log('Pin ' + nodePin.controllerPin + ' found from storage');
           const nowInEpoch = Date.now();
           const fireAt = jobFromStorage - nowInEpoch;
           setTimeout(() => {
@@ -74,7 +75,7 @@ function initPower() {
     })
     .catch(function (error) {
       console.log('[Power Write] Restarting service on init' + error);
-      initPower();
+      exit();
     });
 
   function initPowerRead() {
@@ -104,7 +105,7 @@ function initPower() {
       })
       .catch(function (error) {
         console.log('[Power Read] Restarting service on init' + error);
-        initPowerRead();
+        exit();
       });
   }
 }
@@ -253,9 +254,9 @@ function initStorage() {
     stringify: JSON.stringify,
     parse: JSON.parse,
     encoding: 'utf8',
-    logging: false,  
-    ttl: false, 
-    expiredInterval: 60 * 60 * 1000, 
+    logging: false,
+    ttl: false,
+    expiredInterval: 60 * 60 * 1000,
     continuous: true,
     forgiveParseErrors: false
   });
@@ -291,7 +292,7 @@ function exit() {
     rmqConn = null;
   }
 
-  initPower();
+  process.exit();
 }
 
 //do something when app is closing
