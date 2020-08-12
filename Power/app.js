@@ -15,7 +15,7 @@ let rmqConn = null;
 
 initStorage();
 console.log(getJobFromStorage(0));
-setJobToStorage(0, 10);
+setJobToStorage(0, 10, true);
 initPower();
 
 function initPower() {
@@ -50,15 +50,16 @@ function initPower() {
         // Setup job again if exists
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
+          const job = JSON.parse(jobFromStorage);
           console.log('Pin ' + nodePin.controllerPin + ' found from storage');
           const nowInEpoch = Date.now();
-          const fireAt = jobFromStorage - nowInEpoch;
+          const fireAt = job.time - nowInEpoch;
           setTimeout(() => {
             removeJobFromStorage(nodePin.controllerPin);
             receiveFromRmqToWrite(JSON.stringify(
               {
                 Id: nodePin.controllerPin,
-                Status: false,
+                Status: job.status,
                 ClosedinMilliseconds: 0,
                 Service: 'Power_Write:' + nodeId.toString(),
                 PinModeId: nodePin.pinModeId,
@@ -123,7 +124,7 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds);
+    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds, !model.Status);
     console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
       model.Status = !model.Status;
@@ -249,11 +250,11 @@ function bin2string(array) {
 }
 
 function initStorage() {
-  storage.initSync({dir: '../../../data',});
+  storage.initSync({ dir: '../../../data', });
 }
-function setJobToStorage(pinId, time) {
-  console.log('setJobToStorage:' + pinId + time.toString());
-  storage.setItemSync(pinId.toString(), time.toString());
+function setJobToStorage(pinId, time, status) {
+  console.log('setJobToStorage:', pinId, time, status);
+  storage.setItemSync(pinId.toString(), JSON.stringify({ time: time, status: status }));
 }
 function getJobFromStorage(pinId) {
   return storage.getItemSync(pinId.toString());
