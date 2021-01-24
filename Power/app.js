@@ -7,33 +7,39 @@ const nodeId = process.env.NODE_ID || 7;
 const server_url = process.env.SERVER_URL || 'localhost:2853';
 const RMQ_IP = process.env.RMQ_IP || 'localhost';
 const IS_PROD = process.env.IS_PROD || false;
-var pinReaders = [];
-var pinWriters = [];
-let boilerStatus = true;
+const Relay_Delay = parseInt(process.env.Relay_Delay_In_Ms) || 100;  
+
+let pinReaders = [];
+let pinWriters = [];
+let relayKastaniasInfoList = [];
 let rmqConn = null;
 
-
+console.log(`[POWER] Initializing Storage...`);
 initStorage();
-console.log(getJobFromStorage(0));
-setJobToStorage(0, 10, true);
+console.log(`[POWER] Storage Initialized!`);
+
+console.log(`[POWER] Initializing power configuration...`);
 initPower();
+console.log(`[POWER] Power configuration initialized!`);
 
 function initPower() {
+  console.log(`[POWER] Receiving info about device Output pins...`);
   axios.get(`http://${server_url}/api/NodePin/node/${nodeId}/write`)
     .then(function (response) {
-      console.log('[Power Write] Init:' + JSON.stringify(response.data));
+      console.log('[Power] Info about Output pins received: ' + JSON.stringify(response.data));
       response.data.forEach(function (nodePin) {
 
+        console.log('[Power] Setting up pin ' + nodePin.controllerPin + ' as Output...');
         if (IS_PROD) {
           pinWriters.push({
             gpio: new Gpio(nodePin.controllerPin, 'out'),
             pin: nodePin.controllerPin
           });
         } else {
-
+          console.log('[POWER] Virtual Mode is Enabled! Fake pins are set! To change that behavior add \'IS_PROD\' enviroment variable to \'true\'!');
           let virtualGpio = {
             writeSync: (value) => {
-              console.log(`Virtual Pin ${nodePin.controllerPin} is now ${value}`);
+              console.log(`[POWER] Virtual Pin ${nodePin.controllerPin} is now ${value}`);
             }
           };
 
@@ -42,16 +48,25 @@ function initPower() {
             pin: nodePin.controllerPin
           });
         }
-        if (nodePin.pinModeId === 4) {
-          boilerStatus = nodePin.status;
-        }
-        blink(nodePin.status, nodePin.controllerPin);
+        console.log('[Power] Set up pin ' + nodePin.controllerPin + ' as Output!');
 
-        // Setup job again if exists
+        if (nodePin.pinModeId === 4) {
+          console.log('[Power] Setting up pin ' + nodePin.controllerPin + ' as Rele Kastanias with status ' + nodePin.status + '...');
+          if (relayKastaniasInfoList.some(x => x.pin === nodePin.controllerPin)) {
+            relayKastaniasInfoList = relayKastaniasInfoList.filter(x => x.pin !== nodePin.controllerPin);
+          }
+          relayKastaniasInfoList.push({ pin: nodePin.controllerPin, status: nodePin.status });
+          console.log('[Power] Set up pin ' + nodePin.controllerPin + ' as Rele Kastanias with status ' + nodePin.status + '!');
+        }
+        console.log('[Power] Initializing pin ' + nodePin.controllerPin + ' status: '  + nodePin.status + '...');
+        blink(nodePin.status, nodePin.controllerPin);
+        console.log('[Power] Pin ' + nodePin.controllerPin + ' initialized with status: '  + nodePin.status + '!');
+
+        console.log('[Power] Get paused jobs from storage for pin ' + nodePin.controllerPin + '...');
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
           const job = JSON.parse(jobFromStorage);
-          console.log('Pin ' + nodePin.controllerPin + ' found from storage');
+          console.log('[Power] Pin ' + nodePin.controllerPin + ' has a paused jon in storage, restoring...');
           const nowInEpoch = Date.now();
           const fireAt = job.time - nowInEpoch;
           setTimeout(() => {
@@ -67,30 +82,39 @@ function initPower() {
                 JobGuid: '00000000-0000-0000-0000-000000000000',
                 NodeId: nodeId.toString()
               }));
+              console.log('[Power] Pin ' + nodePin.controllerPin + ' has a paused jon in storage, restored!');
           }, fireAt > 100 ? fireAt : 100);
         }
+        console.log('[Power] Get paused jobs from storage for pin ' + nodePin.controllerPin + ' finished!');
       });
+      console.log(`[POWER] Setup for Output pins finished! `);
 
       initPowerRead();
+
+      console.log('[Power] Create RabbitMq channels and subscribe to listen for messages...');
       subscribeWritersToRMQ();
+      console.log('[Power] RabbitMq channels created and is now listening for messages from the router!');
     })
     .catch(function (error) {
-      console.log('[Power Write] Restarting service on init' + error);
+      console.log('[Power] Restarting service while setting up Outputs' + JSON.stringify(error));
       exit();
     });
 
   function initPowerRead() {
-
+    console.log(`[POWER] Receiveing info about device Input pins!`);
     axios.get(`http://${server_url}/api/NodePin/node/${nodeId}/read`)
       .then(function (response) {
-        console.log('[Power Read] Init:' + JSON.stringify(response.data));
+        console.log('[Power] Info about Input pins received: ' + JSON.stringify(response.data));
         response.data.forEach(function (nodePin) {
+          console.log('[Power] Setting up pin ' + nodePin.controllerPin + ' as Input...');
           pinReaders.push({
             gpio: getGpioReader(nodePin),
             status: 0,
             pin: nodePin
           });
+          console.log('[Power] Set pin ' + nodePin.controllerPin + ' as Input!');
 
+          console.log('[Power] Reading status from device pin ' + nodePin.controllerPin + ' and send to RabbitMq...');
           const _status = pinReaders.find(x => x.pin === nodePin).gpio.readSync();
           pinReaders.find(x => x.pin === nodePin).status = _status;
 
@@ -102,10 +126,11 @@ function initPower() {
           });
 
           initGpioReader(pinReaders.find(x => x.pin === nodePin).gpio);
+          console.log('[Power] Read status from device pin ' + nodePin.controllerPin + ' and sent to RabbitMq!');
         });
       })
       .catch(function (error) {
-        console.log('[Power Read] Restarting service on init' + error);
+        console.log('[Power] Restarting service while setting up Inputs: Error: ' + JSON.stringify(error));
         exit();
       });
   }
@@ -113,11 +138,16 @@ function initPower() {
 
 function handleWrite(model) {
   if (model.PinModeId === 4) {
-    blink(!boilerStatus, model.Id);
+    if (relayKastaniasInfoList.some(x => x.pin == model.Id) === false) {
+      console.log('[Power] ERROR! Pin ' + model.Id + ' has not been set as Rele Kastanias!');
+      exit();
+    }
+    var releStatus = relayKastaniasInfoList.find(x => x.pin == model.Id).status;
+    blink(!releStatus, model.Id);
 
     setTimeout(function () {
-      blink(boilerStatus, model.Id);
-    }, 100);
+      blink(releStatus, model.Id);
+    }, Relay_Delay);
 
   } else {
     blink(model.Status, model.Id);
@@ -125,11 +155,11 @@ function handleWrite(model) {
 
   if (model.ClosedinMilliseconds) {
     setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds, !model.Status);
-    console.log(`[PowerWrite]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
+    console.log(`[Power]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
       model.Status = !model.Status;
       model.ClosedinMilliseconds = 0;
-      console.log(`[PowerWrite]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
+      console.log(`[Power]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
       removeJobFromStorage(model.Id);
       receiveFromRmqToWrite(JSON.stringify(model));
     }, model.ClosedinMilliseconds);
@@ -230,15 +260,17 @@ function sendToRmq(msg) {
   rmqChannel.sendToQueue('Server', new Buffer.from(msg))
     .then(function () {
       rmqChannel.close();
-      return console.log(" [AMQPv4] Sent Message to Home Server:" + msg);
+      return console.log(" [Power] Sent Message to Router:" + msg);
     }).catch(function (err) {
       rmqChannel.close();
-      return console.log(" [AMQPv4] Rejected Message to Home Server:" + msg);
+      return console.log(" [AMQPv4] Rejected Message to Router:" + msg);
     });
 }
 
 function blink(status, id) {
+  console.log('[Power] Triggering pin ' + id + ' as ' + status + '...');
   pinWriters.find(x => x.pin === id).gpio.writeSync(status ? 1 : 0);
+  console.log('[Power] Trigger pin ' + id + ' as ' + status + '!');
 }
 
 function bin2string(array) {
