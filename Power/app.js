@@ -143,13 +143,16 @@ function handleWrite(model) {
       exit();
     }
     var releStatus = relayKastaniasInfoList.find(x => x.pin == model.Id).status;
+    console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + !releStatus);
     blink(!releStatus, model.Id);
 
     setTimeout(function () {
+      console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + releStatus);
       blink(releStatus, model.Id);
     }, Relay_Delay);
 
   } else {
+    console.log('[Power] Set Pin ' + model.Id + ' as ' + model.Status);
     blink(model.Status, model.Id);
   }
 
