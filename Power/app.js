@@ -106,15 +106,15 @@ function initPower() {
       .then(function (response) {
         console.log('[Power] Info about Input pins received: ' + JSON.stringify(response.data));
         response.data.forEach(function (nodePin) {
-          console.log('[Power] Setting up pin ' + nodePin.controllerPin + ' as Input...');
+          console.log('[Power] Setting up pin ' + nodePin + ' as Input...');
           pinReaders.push({
             gpio: getGpioReader(nodePin),
             status: 0,
             pin: nodePin
           });
-          console.log('[Power] Set pin ' + nodePin.controllerPin + ' as Input!');
+          console.log('[Power] Set pin ' + nodePin + ' as Input!');
 
-          console.log('[Power] Reading status from device pin ' + nodePin.controllerPin + ' and send to RabbitMq...');
+          console.log('[Power] Reading status from device pin ' + nodePin + ' and send to RabbitMq...');
           const _status = pinReaders.find(x => x.pin === nodePin).gpio.readSync();
           pinReaders.find(x => x.pin === nodePin).status = _status;
 
@@ -126,7 +126,7 @@ function initPower() {
           });
 
           initGpioReader(pinReaders.find(x => x.pin === nodePin).gpio);
-          console.log('[Power] Read status from device pin ' + nodePin.controllerPin + ' and sent to RabbitMq!');
+          console.log('[Power] Read status from device pin ' + nodePin + ' and sent to RabbitMq!');
         });
       })
       .catch(function (error) {
