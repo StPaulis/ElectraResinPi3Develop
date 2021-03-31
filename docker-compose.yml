@@ -1,6 +1,7 @@
 version: '2.1'
 volumes:
   electra-data:
+  electra-browser-settings:
 services:
   Router:
     build: ./Router
@@ -19,7 +20,7 @@ services:
     volumes:
       - 'electra-data:/data'
     depends_on:
-      - RabbitMQ
+      - Router
     labels:
       io.balena.features.supervisor-api: '1'         
   RabbitMQ:
@@ -30,5 +31,21 @@ services:
     expose: 
       - "5672"
       - "15672"
+    labels:
+      io.balena.features.supervisor-api: '1'
+  browser:
+    build: ./Browser
+    privileged: true 
+    network_mode: host
+    restart: "always"
+    depends_on:
+      - Power
+    environment:
+      PERSISTENT: 1
+      LAUNCH_URL: 'https://electra.iot-design.gr'
+      KIOSK: 1
+      ENABLE_GPU: 1
+    volumes:
+      - 'electra-browser-settings:/data'
     labels:
       io.balena.features.supervisor-api: '1'
