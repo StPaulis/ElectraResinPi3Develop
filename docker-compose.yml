@@ -33,7 +33,7 @@ services:
       - "15672"
     labels:
       io.balena.features.supervisor-api: '1'
-  browser:
+  Browser:
     build: ./Browser
     privileged: true 
     network_mode: host
