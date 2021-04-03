@@ -44,6 +44,7 @@ services:
       PERSISTENT: 1
       LAUNCH_URL: 'https://electra.iot-design.gr'
       KIOSK: 1
+      SHOW_CURSOR: 1
       ENABLE_GPU: 1
     volumes:
       - 'electra-browser-settings:/data'
