@@ -39,7 +39,7 @@ services:
     network_mode: host
     restart: "always"
     depends_on:
-      - Power
+      - Audio
     environment:
       PERSISTENT: 1
       LAUNCH_URL: 'https://electra.iot-design.gr'
@@ -51,7 +51,7 @@ services:
     labels:
       io.balena.features.supervisor-api: '1'
   Audio:
-    image: ./Audio
+    build: ./Audio
     privileged: true
     network_mode: host
     restart: "always"
