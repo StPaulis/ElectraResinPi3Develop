@@ -50,3 +50,14 @@ services:
       - 'electra-browser-settings:/data'
     labels:
       io.balena.features.supervisor-api: '1'
+  Audio:
+    image: balenablocks/audio
+    privileged: true
+    network_mode: host
+    restart: "always"
+    ports:
+      - 4317:4317
+    environment:
+      AUDIO_OUTPUT: RPI_HEADPHONES    
+    labels:
+      io.balena.features.supervisor-api: '1'  

@@ -206,9 +206,7 @@ function createReader(pin) {
 
 function subscribeWritersToRMQ() {
   if (!rmqConn) {
-    rmqConn = amqp.connect([`amqp://${RMQ_IP}`], {
-
-    });
+    rmqConn = amqp.connect([`amqp://${RMQ_IP}`]);
   };
 
   rmqConn.createChannel({

@@ -69,7 +69,7 @@ function watchHome() {
         }),
         channel.consume('Server', function (msg) {
           console.log(
-            ' [Received To Router from Home] %s',
+            '[Received To Router from Home] %s',
             msg.content.toString()
           );
           SendToCloud(msg.content);
