@@ -67,7 +67,7 @@ function initPower() {
         const jobFromStorage = getJobFromStorage(nodePin.controllerPin);
         if (jobFromStorage) {
           const job = JSON.parse(jobFromStorage);
-          console.log('[Power] Pin ' + nodePin.controllerPin + ' has a paused jon in storage, restoring...');
+          console.log('[Power] Pin ' + nodePin.controllerPin + ' has a paused job in storage, restoring...');
           const nowInEpoch = Date.now();
           const fireAt = job.time - nowInEpoch;
           setTimeout(() => {
@@ -161,11 +161,14 @@ function handleWrite(model) {
     setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds, !model.Status);
     console.log(`[Power]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
-      model.Status = !model.Status;
-      model.ClosedinMilliseconds = 0;
-      console.log(`[Power]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
-      removeJobFromStorage(model.Id);
-      onReceiveFromRmqToWrite(JSON.stringify(model));
+      const jobFs = getJobFromStorage(model.Id);
+      if (jobFs) {
+        model.Status = jobFs.status;
+        model.ClosedinMilliseconds = 0;
+        console.log(`[Power]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
+        removeJobFromStorage(model.Id);
+        onReceiveFromRmqToWrite(JSON.stringify(model));
+      }
     }, model.ClosedinMilliseconds);
   }
 }
