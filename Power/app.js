@@ -75,6 +75,7 @@ function initPower() {
             onReceiveFromRmqToWrite(JSON.stringify(
               {
                 Id: nodePin.controllerPin,
+                InputId: job.inputPinId,
                 Status: job.status,
                 ClosedinMilliseconds: 0,
                 Service: 'Power_Write:' + nodeId.toString(),
@@ -143,27 +144,34 @@ function handleWrite(model) {
       console.log('[Power] ERROR! Pin ' + model.Id + ' has not been set as Rele Kastanias!');
       exit();
     }
+
     var releStatus = relayKastaniasInfoList.find(x => x.pin == model.Id).status;
-    console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + !releStatus);
-    triggerPin(!releStatus, model.Id);
 
-    setTimeout(function () {
-      console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + releStatus);
-      triggerPin(releStatus, model.Id);
-    }, Relay_Delay);
+    if (model.InputId) {
+      const inputStatus = pinReaders.filter(x => x.pin === model.InputId)[0].status;
+      if (inputStatus != model.Status) {
+        console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + !releStatus);
+        triggerPin(!releStatus, model.Id);
 
+        setTimeout(function () {
+          console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + releStatus);
+          triggerPin(releStatus, model.Id);
+        }, Relay_Delay);
+      }
+    }
   } else {
     console.log('[Power] Set Pin ' + model.Id + ' as ' + model.Status);
     triggerPin(model.Status, model.Id);
   }
 
   if (model.ClosedinMilliseconds) {
-    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds, !model.Status);
-    console.log(`[Power]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
+    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds, !model.Status, model.InputId);
+    console.log(`[Power]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds with input ${model.InputId}`);
     setTimeout(function () {
       const jobFs = getJobFromStorage(model.Id);
       if (jobFs) {
         model.Status = jobFs.status;
+        model.InputId = jobFs.inputPinId;
         model.ClosedinMilliseconds = 0;
         console.log(`[Power]: Auto Close Triggered for Pin ${model.Id} to ${!model.Status} `);
         removeJobFromStorage(model.Id);
@@ -291,9 +299,9 @@ function bin2string(array) {
 function initStorage() {
   storage.initSync({ dir: '../../../data', });
 }
-function setJobToStorage(pinId, time, status) {
-  console.log('setJobToStorage:', pinId, time, status);
-  storage.setItemSync(pinId.toString(), JSON.stringify({ time: time, status: status }));
+function setJobToStorage(pinId, time, status, inputPinId = null) {
+  console.log('setJobToStorage:', pinId, time, status, inputPinId);
+  storage.setItemSync(pinId.toString(), JSON.stringify({ time: time, status: status, inputPin: inputPinId }));
 }
 function getJobFromStorage(pinId) {
   return storage.getItemSync(pinId.toString());
