@@ -37,7 +37,7 @@ services:
     build: ./Browser
     privileged: true 
     network_mode: host
-    restart: "always"
+    restart: "no"
     depends_on:
       - Audio
     environment:
@@ -54,7 +54,7 @@ services:
     build: ./Audio
     privileged: true
     network_mode: host
-    restart: "always"
+    restart: "no"
     ports:
       - 4317:4317
     environment:
