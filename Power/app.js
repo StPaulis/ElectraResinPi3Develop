@@ -144,11 +144,12 @@ function initPower() {
 function handleWrite(model) {
   const nodePin = pinWriters.find(x => x.pin == model.Id);
   let responseStatus = model.Status;
+  let inputStatus = false;
 
   switch (model.PinModeId) {
     case 2: // Output
 
-      const inputStatus = pinReaders.filter(x => x.pin === nodePin.inputPin)[0].status;
+      inputStatus = pinReaders.filter(x => x.pin === nodePin.inputPin)[0].status;
       if (inputStatus != model.Status) {
         console.log('[Power] Trigger Button Pin ' + model.Id + ' current status ' + !nodePin.status);
         responseStatus = !nodePin.status;
@@ -175,7 +176,7 @@ function handleWrite(model) {
 
       responseStatus = relayKastaniasInfoList.find(x => x.pin == model.Id).status;
 
-      const inputStatus = pinReaders.filter(x => x.pin === nodePin.inputPin)[0].status;
+      inputStatus = pinReaders.filter(x => x.pin === nodePin.inputPin)[0].status;
       if (inputStatus != model.Status) {
         console.log('[Power] Set Kastania Pin ' + model.Id + ' as ' + !responseStatus);
         triggerPin(!responseStatus, model.Id);
@@ -192,7 +193,7 @@ function handleWrite(model) {
   }
 
   if (model.ClosedinMilliseconds) {
-    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds,);
+    setJobToStorage(model.Id, Date.now() + model.ClosedinMilliseconds,!model.Status);
     console.log(`[Power]: Auto Close Set for Pin ${model.Id} to ${!model.Status} in ${model.ClosedinMilliseconds} milliseconds`);
     setTimeout(function () {
       model.Status = !model.Status;
